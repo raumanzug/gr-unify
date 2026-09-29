@@ -135,6 +135,6 @@ Diese Methode stellt den Kern der Unifikation dar.  Sie unifiziert zwei Nicht-Va
 Die `Term`-Methode bettet Variablen und Nicht-Variablen repräsentierende Typen in den allgemeinen Terme repräsentierenden Typ ein.  Die Implementierung ist in den meisten Fällen trivial.
 
 
-## Das Result
+## Das Resultat
 
-Wenn wir alle Interfaces implementiert haben, können wir Terme unifizieren.  Das geht mit der `Unify`-Methode.  `simple_test.go` enthät Testfälle, in denen diese Methode angewendet wird.
+Wenn wir alle Interfaces implementiert haben, können wir Terme unifizieren.  Das geht mit der `Unify`-Methode.  `simple_test.go` enthält Testfälle, in denen diese Methode angewendet wird.

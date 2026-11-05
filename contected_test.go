@@ -39,10 +39,10 @@ type iContectedTerm interface {
 
 func contect(term iTerm, ctxt variableContext_t) iContectedTerm {
 	switch box := term.(type) {
-	case variable_t:
+	case variableTerm_t:
 		return contectedVariable_t{
 			ctxt:     ctxt,
-			variable: box,
+			variable: box.Variable(),
 		}
 	case operationTerm_t:
 		return contectedOperationTerm_t{
@@ -63,7 +63,7 @@ func (recv contectedEquator_t) Get(
 		return nil, false
 	}
 
-	value, hasFound := c1[v.variable.symbol]
+	value, hasFound := c1[string(v.variable)]
 
 	return value, hasFound
 }
@@ -81,7 +81,7 @@ func (recv contectedEquator_t) Set(
 		c1 = make(map[string]iContectedTerm)
 		recv[v.ctxt] = c1
 	}
-	c1[v.variable.symbol] = x
+	c1[string(v.variable)] = x
 
 	return true
 }
@@ -95,7 +95,7 @@ func (recv contectedOperationTerm_t) context() variableContext_t {
 }
 
 func (recv contectedVariable_t) Equals(v contectedVariable_t) bool {
-	return (recv.variable.symbol == v.variable.symbol) &&
+	return (recv.variable == v.variable) &&
 		(recv.ctxt == v.ctxt)
 }
 
@@ -103,7 +103,12 @@ func (recv contectedVariable_t) EqualsTerm(
 	equ contectedEquator_t,
 	term iContectedTerm,
 ) bool {
-	return simple.EqualsTermVar(recv, equ, term)
+	return simple.EqualsTermVar[
+		contectedVariable_t,
+		contectedVariable_t,
+		iContectedTerm,
+		contectedEquator_t,
+	](recv, equ, term)
 }
 
 func (recv contectedVariable_t) Normalform(
@@ -121,6 +126,10 @@ func (recv contectedVariable_t) Unify(
 	term iContectedTerm,
 ) bool {
 	return simple.UnifyVar(recv, equ, term)
+}
+
+func (recv contectedVariable_t) Variable() contectedVariable_t {
+	return recv
 }
 
 func (recv contectedOperationTerm_t) EqualsTerm(
@@ -168,7 +177,13 @@ func (recv contectedOperationTerm_t) Unify(
 	equ contectedEquator_t,
 	term iContectedTerm,
 ) bool {
-	return simple.UnifyNonVar(recv, equ, term)
+	return simple.UnifyNonVar[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+		contectedEquator_t,
+	](recv, equ, term)
 }
 
 func (recv contectedOperationTerm_t) UnifyNonVar(
@@ -196,16 +211,16 @@ func Test_ContectedUnifyA(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -216,10 +231,10 @@ func Test_ContectedUnifyA(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -236,10 +251,10 @@ func Test_ContectedUnifyB(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 		},
@@ -248,10 +263,10 @@ func Test_ContectedUnifyB(t *testing.T) {
 		ctxt:      1,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -276,16 +291,16 @@ func Test_ContectedUnifyC(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -296,10 +311,10 @@ func Test_ContectedUnifyC(t *testing.T) {
 		ctxt:      1,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -324,10 +339,10 @@ func Test_ContectedUnifyD(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -336,10 +351,10 @@ func Test_ContectedUnifyD(t *testing.T) {
 		ctxt:      1,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -364,16 +379,16 @@ func Test_ContectedUnifyE(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -385,16 +400,16 @@ func Test_ContectedUnifyE(t *testing.T) {
 		ctxt:      1,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -421,16 +436,16 @@ func Test_ContectedUnifyF(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -445,12 +460,12 @@ func Test_ContectedUnifyF(t *testing.T) {
 			operationTerm_t{
 				operation: "g",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "u",
 					},
 				},
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -466,17 +481,17 @@ func Test_ContectedUnifyF(t *testing.T) {
 					operationTerm_t{
 						operation: "k",
 						args: []iTerm{
-							variable_t{
+							variableTerm_t{
 								symbol: "p",
 							},
-							variable_t{
+							variableTerm_t{
 								symbol: "q",
 							},
 						},
 					},
 				},
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -533,16 +548,16 @@ func Test_ContectedUnifyG(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 			operationTerm_t{
 				operation: "h",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "v",
 					},
-					variable_t{
+					variableTerm_t{
 						symbol: "w",
 					},
 				},
@@ -557,12 +572,12 @@ func Test_ContectedUnifyG(t *testing.T) {
 			operationTerm_t{
 				operation: "g",
 				args: []iTerm{
-					variable_t{
+					variableTerm_t{
 						symbol: "u",
 					},
 				},
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -578,17 +593,17 @@ func Test_ContectedUnifyG(t *testing.T) {
 					operationTerm_t{
 						operation: "k",
 						args: []iTerm{
-							variable_t{
+							variableTerm_t{
 								symbol: "p",
 							},
-							variable_t{
+							variableTerm_t{
 								symbol: "q",
 							},
 						},
 					},
 				},
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -645,10 +660,10 @@ func Test_ReflexivityEqualsContectedTerm(t *testing.T) {
 		ctxt:      0,
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},

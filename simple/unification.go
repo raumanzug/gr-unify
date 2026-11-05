@@ -5,19 +5,22 @@ import (
 )
 
 func UnifyVar[
-	V unif.IVarTerm[V, S, E],
+	V unif.IEquality[V],
+	VT unif.IVarTerm[V, S, E],
 	S unif.ITerm[V, S, E],
 	E unif.IEquator[V, S],
 ](
-	v V,
+	vt VT,
 	equ E,
 	term S,
 ) bool {
+	v := vt.Variable()
+
 	var normalizedTerm unif.ITerm[V, S, E]
 	normalizedTerm = term.Normalform(equ)
 	switch box := normalizedTerm.(type) {
-	case V:
-		if v.Equals(box) {
+	case VT:
+		if v.Equals(box.Variable()) {
 			return true
 		}
 		value, isNotEmpty := equ.Get(v)
@@ -38,21 +41,22 @@ func UnifyVar[
 }
 
 func UnifyNonVar[
-	V unif.IVarTerm[V, S, E],
-	N unif.INonVarTerm[V, N, S, E],
+	V unif.IEquality[V],
+	VT unif.IVarTerm[V, S, E],
+	NT unif.INonVarTerm[V, NT, S, E],
 	S unif.ITerm[V, S, E],
 	E unif.IEquator[V, S],
 ](
-	left N,
+	left NT,
 	equ E,
 	right S,
 ) bool {
 	var normalizedTerm unif.ITerm[V, S, E]
 	normalizedTerm = right.Normalform(equ)
 	switch box := normalizedTerm.(type) {
-	case V:
-		return equ.Set(box, left.Term())
-	case N:
+	case VT:
+		return equ.Set(box.Variable(), left.Term())
+	case NT:
 		return box.UnifyNonVar(equ, left)
 	default:
 		return false
@@ -60,17 +64,19 @@ func UnifyNonVar[
 }
 
 func Normalform[
-	V unif.IVarTerm[V, S, E],
+	V unif.IEquality[V],
+	VT unif.IVarTerm[V, S, E],
 	S unif.ITerm[V, S, E],
 	E unif.IEquator[V, S],
 ](
-	v V,
+	vt VT,
 	equ E,
 ) S {
+	v := vt.Variable()
 	value, isNotEmpty := equ.Get(v)
 	if isNotEmpty {
 		return value.Normalform(equ)
 	} else {
-		return v.Term()
+		return vt.Term()
 	}
 }

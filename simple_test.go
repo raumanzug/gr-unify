@@ -18,12 +18,14 @@ type iTerm interface {
 	]
 }
 
-type variable_t struct {
+type variable_t string
+
+type variableTerm_t struct {
 	symbol string
 }
 
 func (recv simpleEquator_t) Get(v variable_t) (iTerm, bool) {
-	retval, isOK := recv[v.symbol]
+	retval, isOK := recv[string(v)]
 
 	return retval, isOK
 }
@@ -33,7 +35,7 @@ func newSimpleEquator() simpleEquator_t {
 }
 
 func (recv simpleEquator_t) Set(v variable_t, x iTerm) bool {
-	recv[v.symbol] = x
+	recv[string(v)] = x
 
 	return true
 }
@@ -44,31 +46,35 @@ type operationTerm_t struct {
 }
 
 func (recv variable_t) Equals(v variable_t) bool {
-	return recv.symbol == v.symbol
+	return recv == v
 }
 
-func (recv variable_t) EqualsTerm(
+func (recv variableTerm_t) EqualsTerm(
 	equ simpleEquator_t,
 	term iTerm,
 ) bool {
 	return simple.EqualsTermVar(recv, equ, term)
 }
 
-func (recv variable_t) Normalform(
+func (recv variableTerm_t) Normalform(
 	equ simpleEquator_t,
 ) iTerm {
 	return simple.Normalform(recv, equ)
 }
 
-func (recv variable_t) Term() iTerm {
+func (recv variableTerm_t) Term() iTerm {
 	return recv
 }
 
-func (recv variable_t) Unify(
+func (recv variableTerm_t) Unify(
 	equ simpleEquator_t,
 	term iTerm,
 ) bool {
 	return simple.UnifyVar(recv, equ, term)
+}
+
+func (recv variableTerm_t) Variable() variable_t {
+	return variable_t(recv.symbol)
 }
 
 func (recv operationTerm_t) EqualsTerm(
@@ -78,7 +84,7 @@ func (recv operationTerm_t) EqualsTerm(
 	var normalizedTerm iTerm
 	normalizedTerm = term.Normalform(equ)
 	switch box := normalizedTerm.(type) {
-	case variable_t:
+	case variableTerm_t:
 		return false
 	case operationTerm_t:
 		if recv.operation != box.operation {
@@ -111,7 +117,13 @@ func (recv operationTerm_t) Unify(
 	equ simpleEquator_t,
 	term iTerm,
 ) bool {
-	return simple.UnifyNonVar(recv, equ, term)
+	return simple.UnifyNonVar[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+		simpleEquator_t,
+	](recv, equ, term)
 }
 
 func (recv operationTerm_t) UnifyNonVar(
@@ -136,10 +148,10 @@ func Test_Unify(t *testing.T) {
 	termA := operationTerm_t{
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
 		},
@@ -147,10 +159,10 @@ func Test_Unify(t *testing.T) {
 	termB := operationTerm_t{
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},
@@ -182,10 +194,10 @@ func Test_ReflexivityEqualsTerm(t *testing.T) {
 	term := operationTerm_t{
 		operation: "f",
 		args: []iTerm{
-			variable_t{
+			variableTerm_t{
 				symbol: "x",
 			},
-			variable_t{
+			variableTerm_t{
 				symbol: "y",
 			},
 		},

@@ -5,10 +5,12 @@ import (
 )
 
 func EqualsTermVar[
-	V unif.IVarTerm[V, S, E],
+	V unif.IEquality[V],
+	VT unif.IVarTerm[V, S, E],
 	S unif.ITermWithEquality[V, S, E],
 	E unif.IEquator[V, S],
-](v V, equ E, term S) bool {
+](vt VT, equ E, term S) bool {
+	v := vt.Variable()
 	value, isNotEmpty := equ.Get(v)
 	if isNotEmpty {
 		return value.EqualsTerm(equ, term)
@@ -17,8 +19,8 @@ func EqualsTermVar[
 	var normalizedTerm unif.ITerm[V, S, E]
 	normalizedTerm = term.Normalform(equ)
 	switch lbox := normalizedTerm.(type) {
-	case V:
-		return v.Equals(lbox)
+	case VT:
+		return v.Equals(lbox.Variable())
 	default:
 		return false
 	}

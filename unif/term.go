@@ -11,14 +11,14 @@ type IEquator[V any, S any] interface {
 }
 
 type IVarTerm[
-	V any,
+	V IEquality[V],
 	S ITerm[V, S, E],
 	E IEquator[V, S],
 ] interface {
-	IEquality[V]
 	ITerm[V, S, E]
 
 	Term() S
+	Variable() V
 }
 
 type INonVarTerm[

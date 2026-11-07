@@ -12,42 +12,43 @@ type IEquator[V any, S any] interface {
 
 type IVarTerm[
 	V IEquality[V],
-	S ITerm[V, S, E],
-	E IEquator[V, S],
+	S ITerm[V, S],
 ] interface {
-	ITerm[V, S, E]
+	ITerm[V, S]
 
-	Term() S
 	Variable() V
 }
 
 type INonVarTerm[
 	V any,
 	N any,
-	S ITerm[V, S, E],
-	E IEquator[V, S],
+	S ITerm[V, S],
 ] interface {
-	ITerm[V, S, E]
+	ITerm[V, S]
 
-	Term() S
-	UnifyNonVar(E, N) bool
+	UnifyNonVar(IEquator[V, S], N) bool
 }
 
 type ITerm[
 	V any,
-	S ITerm[V, S, E],
-	E IEquator[V, S],
+	S ITerm[V, S],
 ] interface {
-	Normalform(E) S
-	Unify(E, S) bool
+	Term() S
+}
+
+type INonVarTermWithEquality[
+	V any,
+	N any,
+	S ITermWithEquality[V, S],
+] interface {
+	INonVarTerm[V, N, S]
+
+	EqualsTermNonVar(IEquator[V, S], S) bool
 }
 
 type ITermWithEquality[
 	V any,
-	S ITermWithEquality[V, S, E],
-	E IEquator[V, S],
+	S ITermWithEquality[V, S],
 ] interface {
-	ITerm[V, S, E]
-
-	EqualsTerm(E, S) bool
+	ITerm[V, S]
 }

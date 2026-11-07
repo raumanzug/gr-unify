@@ -76,7 +76,7 @@ zu Endlosschleifen führen würden. `gr-unify` würde versuchen, `x` durch einen
 
 # Implementation von Interfaces
 
-`variable_t` und `operationTerm_t` müssen Interfaces implementieren, teilweise mit Hilfe von in dieser Bibliothek extra für diesen Zweck definierten Funktionen.
+`variable_t` und `operationTerm_t` müssen Interfaces implementieren.
 
 Zuerst benötigen wir eine Gleichheitsrelation auf dem Variablen repräsentierenden Typ:
 
@@ -85,32 +85,6 @@ Zuerst benötigen wir eine Gleichheitsrelation auf dem Variablen repräsentieren
 	}
 
 Das implementiert das Interface `unif.IEquality`.
-
-Die schon erwähnten Hilfsfunktionen nehmen uns die Arbeit zur Implementation der Interfaces zu einem gewissen Teil ab:
-
-	func (recv variable_t) EqualsTerm(
-		equ simpleEquator_t, term iTerm,
-	) bool {
-		return simple.EqualsTermVar(recv, equ, term)
-	}
-
-	func (recv variable_t) Normalform(
-		equ simpleEquator_t,
-	) iTerm {
-		return simple.Normalform(recv, equ)
-	}
-
-	func (recv variable_t) Unify(
-		equ simpleEquator_t, term iTerm,
-	) bool {
-		return simple.UnifyVar(recv, equ, term)
-	}
-
-	func (recv operationTerm_t) Unify(
-		equ simpleEquator_t, term iTerm,
-	) bool {
-		return simple.UnifyNonVar(recv, equ, term)
-	}
 
 Im Wurzelverzeichnis dieses Projektes sind in der Datei `simple_test.go` auch alle anderen Definitionen enthalten, die der Entwickler selbst implementieren muß.
 

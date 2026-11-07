@@ -14,7 +14,6 @@ type iTerm interface {
 	unif.ITermWithEquality[
 		variable_t,
 		iTerm,
-		simpleEquator_t,
 	]
 }
 
@@ -49,40 +48,25 @@ func (recv variable_t) Equals(v variable_t) bool {
 	return recv == v
 }
 
-func (recv variableTerm_t) EqualsTerm(
-	equ simpleEquator_t,
-	term iTerm,
-) bool {
-	return simple.EqualsTermVar(recv, equ, term)
-}
-
-func (recv variableTerm_t) Normalform(
-	equ simpleEquator_t,
-) iTerm {
-	return simple.Normalform(recv, equ)
-}
-
 func (recv variableTerm_t) Term() iTerm {
 	return recv
-}
-
-func (recv variableTerm_t) Unify(
-	equ simpleEquator_t,
-	term iTerm,
-) bool {
-	return simple.UnifyVar(recv, equ, term)
 }
 
 func (recv variableTerm_t) Variable() variable_t {
 	return variable_t(recv.symbol)
 }
 
-func (recv operationTerm_t) EqualsTerm(
-	equ simpleEquator_t,
+func (recv operationTerm_t) EqualsTermNonVar(
+	equ unif.IEquator[variable_t, iTerm],
 	term iTerm,
 ) bool {
 	var normalizedTerm iTerm
-	normalizedTerm = term.Normalform(equ)
+	normalizedTerm = simple.Normalform[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](equ, term)
 	switch box := normalizedTerm.(type) {
 	case variableTerm_t:
 		return false
@@ -95,7 +79,12 @@ func (recv operationTerm_t) EqualsTerm(
 			recv.args,
 			box.args,
 			func(left iTerm, right iTerm) bool {
-				return left.EqualsTerm(equ, right)
+				return simple.EqualsTerm[
+					variable_t,
+					variableTerm_t,
+					operationTerm_t,
+					iTerm,
+				](equ, left, right)
 			},
 		)
 	}
@@ -103,31 +92,12 @@ func (recv operationTerm_t) EqualsTerm(
 	return false
 }
 
-func (recv operationTerm_t) Normalform(
-	equ simpleEquator_t,
-) iTerm {
-	return recv
-}
-
 func (recv operationTerm_t) Term() iTerm {
 	return recv
 }
 
-func (recv operationTerm_t) Unify(
-	equ simpleEquator_t,
-	term iTerm,
-) bool {
-	return simple.UnifyNonVar[
-		variable_t,
-		variableTerm_t,
-		operationTerm_t,
-		iTerm,
-		simpleEquator_t,
-	](recv, equ, term)
-}
-
 func (recv operationTerm_t) UnifyNonVar(
-	equ simpleEquator_t,
+	equ unif.IEquator[variable_t, iTerm],
 	term operationTerm_t,
 ) bool {
 	if recv.operation != term.operation {
@@ -138,7 +108,12 @@ func (recv operationTerm_t) UnifyNonVar(
 		recv.args,
 		term.args,
 		func(left iTerm, right iTerm) bool {
-			return left.Unify(equ, right)
+			return simple.Unify[
+				variable_t,
+				variableTerm_t,
+				operationTerm_t,
+				iTerm,
+			](equ, left, right)
 		},
 	)
 }
@@ -168,23 +143,48 @@ func Test_Unify(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if termB.EqualsTerm(myEquator, termA) {
+	if simple.EqualsTerm[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 
-	if !termB.Unify(myEquator, termA) {
+	if !simple.Unify[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termB.EqualsTerm(myEquator, termA) {
+	if !simple.EqualsTerm[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 }
@@ -203,7 +203,12 @@ func Test_ReflexivityEqualsTerm(t *testing.T) {
 		},
 	}
 
-	if !term.EqualsTerm(myEquator, term) {
+	if !simple.EqualsTerm[
+		variable_t,
+		variableTerm_t,
+		operationTerm_t,
+		iTerm,
+	](myEquator, term, term) {
 		t.Fail()
 	}
 }

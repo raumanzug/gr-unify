@@ -31,7 +31,6 @@ type iContectedTerm interface {
 	unif.ITermWithEquality[
 		contectedVariable_t,
 		iContectedTerm,
-		contectedEquator_t,
 	]
 
 	context() variableContext_t
@@ -99,45 +98,25 @@ func (recv contectedVariable_t) Equals(v contectedVariable_t) bool {
 		(recv.ctxt == v.ctxt)
 }
 
-func (recv contectedVariable_t) EqualsTerm(
-	equ contectedEquator_t,
-	term iContectedTerm,
-) bool {
-	return simple.EqualsTermVar[
-		contectedVariable_t,
-		contectedVariable_t,
-		iContectedTerm,
-		contectedEquator_t,
-	](recv, equ, term)
-}
-
-func (recv contectedVariable_t) Normalform(
-	equ contectedEquator_t,
-) iContectedTerm {
-	return simple.Normalform(recv, equ)
-}
-
 func (recv contectedVariable_t) Term() iContectedTerm {
 	return recv
-}
-
-func (recv contectedVariable_t) Unify(
-	equ contectedEquator_t,
-	term iContectedTerm,
-) bool {
-	return simple.UnifyVar(recv, equ, term)
 }
 
 func (recv contectedVariable_t) Variable() contectedVariable_t {
 	return recv
 }
 
-func (recv contectedOperationTerm_t) EqualsTerm(
-	equ contectedEquator_t,
+func (recv contectedOperationTerm_t) EqualsTermNonVar(
+	equ unif.IEquator[contectedVariable_t, iContectedTerm],
 	term iContectedTerm,
 ) bool {
 	var normalizedTerm iContectedTerm
-	normalizedTerm = term.Normalform(equ)
+	normalizedTerm = simple.Normalform[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](equ, term)
 	switch box := normalizedTerm.(type) {
 	case contectedVariable_t:
 		return false
@@ -152,8 +131,14 @@ func (recv contectedOperationTerm_t) EqualsTerm(
 			func(left iTerm, right iTerm) bool {
 				contectedLeft := contect(left, recv.ctxt)
 				contectedRight := contect(right, box.ctxt)
-				return contectedLeft.EqualsTerm(
+				return simple.EqualsTerm[
+					contectedVariable_t,
+					contectedVariable_t,
+					contectedOperationTerm_t,
+					iContectedTerm,
+				](
 					equ,
+					contectedLeft,
 					contectedRight,
 				)
 			},
@@ -163,31 +148,12 @@ func (recv contectedOperationTerm_t) EqualsTerm(
 	return false
 }
 
-func (recv contectedOperationTerm_t) Normalform(
-	equ contectedEquator_t,
-) iContectedTerm {
-	return recv
-}
-
 func (recv contectedOperationTerm_t) Term() iContectedTerm {
 	return recv
 }
 
-func (recv contectedOperationTerm_t) Unify(
-	equ contectedEquator_t,
-	term iContectedTerm,
-) bool {
-	return simple.UnifyNonVar[
-		contectedVariable_t,
-		contectedVariable_t,
-		contectedOperationTerm_t,
-		iContectedTerm,
-		contectedEquator_t,
-	](recv, equ, term)
-}
-
 func (recv contectedOperationTerm_t) UnifyNonVar(
-	equ contectedEquator_t,
+	equ unif.IEquator[contectedVariable_t, iContectedTerm],
 	term contectedOperationTerm_t,
 ) bool {
 	if recv.operation != term.operation {
@@ -200,7 +166,16 @@ func (recv contectedOperationTerm_t) UnifyNonVar(
 		func(left iTerm, right iTerm) bool {
 			contectedLeft := contect(left, recv.ctxt)
 			contectedRight := contect(right, term.ctxt)
-			return contectedLeft.Unify(equ, contectedRight)
+			return simple.Unify[
+				contectedVariable_t,
+				contectedVariable_t,
+				contectedOperationTerm_t,
+				iContectedTerm,
+			](
+				equ,
+				contectedLeft,
+				contectedRight,
+			)
 		},
 	)
 }
@@ -240,7 +215,12 @@ func Test_ContectedUnifyA(t *testing.T) {
 		},
 	}
 
-	if termA.Unify(myEquator, termB) {
+	if simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 }
@@ -272,15 +252,30 @@ func Test_ContectedUnifyB(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.Unify(myEquator, termB) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 }
@@ -320,15 +315,30 @@ func Test_ContectedUnifyC(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termB.Unify(myEquator, termA) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 }
@@ -360,15 +370,30 @@ func Test_ContectedUnifyD(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.Unify(myEquator, termB) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 }
@@ -417,15 +442,30 @@ func Test_ContectedUnifyE(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termB.Unify(myEquator, termA) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 }
@@ -497,47 +537,102 @@ func Test_ContectedUnifyF(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if termA.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if termB.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 
-	if !termB.Unify(myEquator, termA) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termA) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if termA.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if termB.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 
-	if !termC.Unify(myEquator, termA) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termC, termA) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termC) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if !termB.EqualsTerm(myEquator, termC) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 }
@@ -609,47 +704,102 @@ func Test_ContectedUnifyG(t *testing.T) {
 		},
 	}
 
-	if termA.EqualsTerm(myEquator, termB) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if termA.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if termB.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 
-	if !termA.Unify(myEquator, termB) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if termA.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if termB.EqualsTerm(myEquator, termC) {
+	if simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 
-	if !termC.Unify(myEquator, termB) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termC, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termB) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termB) {
 		t.Fail()
 	}
 
-	if !termA.EqualsTerm(myEquator, termC) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termA, termC) {
 		t.Fail()
 	}
 
-	if !termB.EqualsTerm(myEquator, termC) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, termB, termC) {
 		t.Fail()
 	}
 }
@@ -669,15 +819,30 @@ func Test_ReflexivityEqualsContectedTerm(t *testing.T) {
 		},
 	}
 
-	if !term.EqualsTerm(myEquator, term) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, term, term) {
 		t.Fail()
 	}
 
-	if !term.Unify(myEquator, term) {
+	if !simple.Unify[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, term, term) {
 		t.Fail()
 	}
 
-	if !term.EqualsTerm(myEquator, term) {
+	if !simple.EqualsTerm[
+		contectedVariable_t,
+		contectedVariable_t,
+		contectedOperationTerm_t,
+		iContectedTerm,
+	](myEquator, term, term) {
 		t.Fail()
 	}
 }
